@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fractide.xyz - Optimized Single Player Demo</title>
+    <title>Fractide.xyz - Debugged Single Player Demo</title>
     <style>
         body { margin: 0; background: #111; color: #fff; font-family: Arial, sans-serif; overflow: hidden; }
         canvas { display: block; }
@@ -53,8 +53,8 @@
         let aiPlayers = [];
         for (let i = 0; i < AI_PLAYER_COUNT; i++) {
             aiPlayers.push({
-                x: (Math.random() - 0.5) * MAP_RADIUS * 2,
-                y: (Math.random() - 0.5) * MAP_RADIUS * 2,
+                x: (Math.random() - 0.5) * MAP_RADIUS * 0.8,
+                y: (Math.random() - 0.5) * MAP_RADIUS * 0.8,
                 size: 1 + Math.random() * 3,
                 username: 'AI' + i,
                 dx: (Math.random() - 0.5) * 1,
@@ -70,7 +70,7 @@
         let mouseY = canvas.height / 2;
         let isGameOver = false;
         let rankingVisible = true;
-        let hoveredSkill = -1; // For button hover
+        let hoveredSkill = -1;
 
         const skillDefs = [
             { id: 'dash', name: 'Dash', color: 'red', cooldown: 8000, effect: () => {
@@ -176,8 +176,8 @@
             player.particles = [];
             fragments = [];
             aiPlayers.forEach(ai => {
-                ai.x = (Math.random() - 0.5) * MAP_RADIUS * 2;
-                ai.y = (Math.random() - 0.5) * MAP_RADIUS * 2;
+                ai.x = Math.min(MAP_RADIUS * 0.8, Math.max(-MAP_RADIUS * 0.8, ai.x));
+                ai.y = Math.min(MAP_RADIUS * 0.8, Math.max(-MAP_RADIUS * 0.8, ai.y));
                 ai.size = 1 + Math.random() * 3;
                 ai.dx = (Math.random() - 0.5) * 1;
                 ai.dy = (Math.random() - 0.5) * 1;
@@ -190,14 +190,18 @@
 
         function generateFragments(count) {
             for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * MAP_RADIUS * 0.8 + MAP_RADIUS * 0.1;
+                let angle, dist, x, y;
+                do {
+                    angle = Math.random() * Math.PI * 2;
+                    dist = Math.random() * MAP_RADIUS * 0.8;
+                    x = Math.cos(angle) * dist;
+                    y = Math.sin(angle) * dist;
+                } while (Math.hypot(x, y) > MAP_RADIUS);
                 const typeRoll = Math.random();
                 let type = 'energy';
                 if (typeRoll > (1 - SKILL_FRAGMENT_PROB)) type = 'skill';
                 fragments.push({
-                    x: Math.cos(angle) * dist,
-                    y: Math.sin(angle) * dist,
+                    x, y,
                     type,
                     value: 0.5
                 });
@@ -229,12 +233,9 @@
                         player.size *= 0.8;
                         player.health = Math.min(100, player.size * 10);
                     }
-                    // Bump, no removal
-                    return true;
                 }
                 return true;
             });
-            // Satellite attacks
             player.satellites.forEach(sat => {
                 aiPlayers = aiPlayers.filter(ai => {
                     const dist = Math.hypot(sat.x - ai.x, sat.y - ai.y);
@@ -317,7 +318,7 @@
             const rect = canvas.getBoundingClientRect();
             mouseX = e.clientX - rect.left;
             mouseY = e.clientY - rect.top;
-            hoveredSkill = -1; // Reset for hover check in render
+            hoveredSkill = -1;
         });
 
         canvas.addEventListener('touchmove', (e) => {
@@ -342,20 +343,30 @@
             const dist = Math.hypot(dx, dy);
             if (dist > 0) {
                 const speed = BASE_SPEED / Math.sqrt(player.size);
-                const newX = player.x + (dx / dist) * speed;
-                const newY = player.y + (dy / dist) * speed;
-                if (Math.hypot(newX, newY) < MAP_RADIUS) {
-                    player.x = newX;
-                    player.y = newY;
-                    player.energy -= player.size * 0.001;
+                let newX = player.x + (dx / dist) * speed;
+                let newY = player.y + (dy / dist) * speed;
+                const playerDist = Math.hypot(newX, newY);
+                if (playerDist > MAP_RADIUS) {
+                    const angle = Math.atan2(newY, newX);
+                    newX = Math.cos(angle) * MAP_RADIUS;
+                    newY = Math.sin(angle) * MAP_RADIUS;
                 }
+                player.x = newX;
+                player.y = newY;
+                player.energy -= player.size * 0.001;
             }
 
             aiPlayers.forEach(ai => {
                 ai.x += ai.dx;
                 ai.y += ai.dy;
                 const aiDist = Math.hypot(ai.x, ai.y);
-                if (aiDist > MAP_RADIUS || Math.random() < 0.003) {
+                if (aiDist > MAP_RADIUS) {
+                    const angle = Math.atan2(ai.y, ai.x);
+                    ai.x = Math.cos(angle) * MAP_RADIUS;
+                    ai.y = Math.sin(angle) * MAP_RADIUS;
+                    ai.dx = -ai.dx * 0.5;
+                    ai.dy = -ai.dy * 0.5;
+                } else if (Math.random() < 0.003) {
                     ai.dx = (Math.random() - 0.5) * 1;
                     ai.dy = (Math.random() - 0.5) * 1;
                 }
@@ -366,6 +377,12 @@
                 sat.angle += 0.05;
                 sat.x = player.x + Math.cos(sat.angle) * sat.radius;
                 sat.y = player.y + Math.sin(sat.angle) * sat.radius;
+                const satDist = Math.hypot(sat.x, sat.y);
+                if (satDist > MAP_RADIUS) {
+                    const angle = Math.atan2(sat.y, sat.x);
+                    sat.x = Math.cos(angle) * MAP_RADIUS;
+                    sat.y = Math.sin(angle) * MAP_RADIUS;
+                }
             });
 
             Object.keys(player.skillCooldowns).forEach(skill => {
@@ -397,24 +414,22 @@
 
             checkCollisions();
 
-            cameraZoom = 1 / (1 + player.size / 150);
-            const zoomedWidth = canvas.width * cameraZoom;
-            const zoomedHeight = canvas.height * cameraZoom;
-            cameraX = player.x - zoomedWidth / 2;
-            cameraY = player.y - zoomedHeight / 2;
+            cameraZoom = 1 / (1 + Math.sqrt(player.size) / 10);
+            const zoomedWidth = Math.min(canvas.width, MAP_RADIUS * 2) * cameraZoom;
+            const zoomedHeight = Math.min(canvas.height, MAP_RADIUS * 2) * cameraZoom;
+            cameraX = Math.max(-MAP_RADIUS + canvas.width / 2 / cameraZoom, Math.min(player.x, MAP_RADIUS - canvas.width / 2 / cameraZoom));
+            cameraY = Math.max(-MAP_RADIUS + canvas.height / 2 / cameraZoom, Math.min(player.y, MAP_RADIUS - canvas.height / 2 / cameraZoom));
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Black out outside circle
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.save();
             ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, MAP_RADIUS * cameraZoom / 2, 0, Math.PI * 2);
+            ctx.arc(canvas.width / 2, canvas.height / 2, MAP_RADIUS * cameraZoom, 0, Math.PI * 2);
             ctx.clip();
 
-            // Gradient background
-            const gradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, MAP_RADIUS * cameraZoom / 2);
+            const gradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, MAP_RADIUS * cameraZoom);
             gradient.addColorStop(0, '#444');
             gradient.addColorStop(1, '#111');
             ctx.fillStyle = gradient;
@@ -423,7 +438,7 @@
             ctx.restore();
 
             ctx.save();
-            ctx.translate(-cameraX + canvas.width / 2 - player.x, -cameraY + canvas.height / 2 - player.y);
+            ctx.translate(-cameraX + canvas.width / 2, -cameraY + canvas.height / 2);
             ctx.scale(1 / cameraZoom, 1 / cameraZoom);
 
             ctx.beginPath();
@@ -433,48 +448,57 @@
             ctx.stroke();
 
             fragments.forEach(frag => {
-                ctx.beginPath();
-                const screenX = frag.x;
-                const screenY = frag.y;
-                if (frag.type === 'skill') {
-                    const size = 15;
-                    ctx.moveTo(screenX + size * Math.cos(0), screenY + size * Math.sin(0));
-                    for (let i = 1; i <= 6; i++) {
-                        ctx.lineTo(screenX + size * Math.cos(i * Math.PI / 3), screenY + size * Math.sin(i * Math.PI / 3));
+                const fragDist = Math.hypot(frag.x, frag.y);
+                if (fragDist <= MAP_RADIUS) {
+                    ctx.beginPath();
+                    const screenX = frag.x;
+                    const screenY = frag.y;
+                    if (frag.type === 'skill') {
+                        const size = 15;
+                        ctx.moveTo(screenX + size * Math.cos(0), screenY + size * Math.sin(0));
+                        for (let i = 1; i <= 6; i++) {
+                            ctx.lineTo(screenX + size * Math.cos(i * Math.PI / 3), screenY + size * Math.sin(i * Math.PI / 3));
+                        }
+                        ctx.fillStyle = skillDefs.find(s => s.id === currentTree[player.skills.length]?.id)?.color || 'green';
+                    } else {
+                        ctx.arc(screenX, screenY, 5, 0, Math.PI * 2);
+                        ctx.fillStyle = 'blue';
                     }
-                    ctx.fillStyle = skillDefs.find(s => s.id === currentTree[player.skills.length]?.id)?.color || 'green';
-                } else {
-                    ctx.arc(screenX, screenY, 5, 0, Math.PI * 2);
-                    ctx.fillStyle = 'blue';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
                 }
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.lineWidth = 2;
-                ctx.stroke();
             });
 
             aiPlayers.forEach(ai => {
-                ctx.shadowColor = 'gray';
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.arc(ai.x, ai.y, ai.size * 10, 0, Math.PI * 2);
-                ctx.fillStyle = 'gray';
-                ctx.fill();
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = 'white';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(ai.username, ai.x, ai.y - ai.size * 15 - 10);
-                drawRoundedRect(ai.x - 50, ai.y - ai.size * 15, Math.min(100, ai.size * 10), 5, 2);
-                ctx.strokeStyle = 'white';
-                ctx.strokeRect(ai.x - 50, ai.y - ai.size * 15, 100, 5);
+                const aiDist = Math.hypot(ai.x, ai.y);
+                if (aiDist <= MAP_RADIUS) {
+                    ctx.shadowColor = 'gray';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(ai.x, ai.y, ai.size * 10, 0, Math.PI * 2);
+                    ctx.fillStyle = 'gray';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ai.username, ai.x, ai.y - ai.size * 15 - 10);
+                    drawRoundedRect(ai.x - 50, ai.y - ai.size * 15, Math.min(100, ai.size * 10), 5, 2);
+                    ctx.strokeStyle = 'white';
+                    ctx.strokeRect(ai.x - 50, ai.y - ai.size * 15, 100, 5);
+                }
             });
 
             player.satellites.forEach(sat => {
-                ctx.beginPath();
-                ctx.arc(sat.x, sat.y, sat.size * 5, 0, Math.PI * 2);
-                ctx.fillStyle = 'yellow';
-                ctx.fill();
+                const satDist = Math.hypot(sat.x, sat.y);
+                if (satDist <= MAP_RADIUS) {
+                    ctx.beginPath();
+                    ctx.arc(sat.x, sat.y, sat.size * 5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'yellow';
+                    ctx.fill();
+                }
             });
 
             ctx.shadowColor = 'red';
@@ -508,9 +532,60 @@
 
             ctx.restore();
 
-            // Minimap (unchanged for brevity)
+            // Minimap
+            const miniSize = 150;
+            const miniX = canvas.width - miniSize - 10;
+            const miniY = canvas.height - miniSize - 10;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(miniX, miniY, miniSize, miniSize);
+            ctx.clip();
+            ctx.beginPath();
+            ctx.arc(miniX + miniSize / 2, miniY + miniSize / 2, miniSize / 2, 0, Math.PI * 2);
+            ctx.fillStyle = '#333';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-            // Render skill buttons below player on screen
+            const playerMiniX = miniX + miniSize / 2 + (player.x / MAP_RADIUS) * (miniSize / 2);
+            const playerMiniY = miniY + miniSize / 2 + (player.y / MAP_RADIUS) * (miniSize / 2);
+            ctx.beginPath();
+            ctx.arc(playerMiniX, playerMiniY, 7, 0, Math.PI * 2);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+            if (dist > 0) {
+                const arrowX = playerMiniX + (dx / dist) * 10;
+                const arrowY = playerMiniY + (dy / dist) * 10;
+                ctx.beginPath();
+                ctx.moveTo(playerMiniX, playerMiniY);
+                ctx.lineTo(arrowX, arrowY);
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            aiPlayers.forEach(ai => {
+                const aiMiniX = miniX + miniSize / 2 + (ai.x / MAP_RADIUS) * (miniSize / 2);
+                const aiMiniY = miniY + miniSize / 2 + (ai.y / MAP_RADIUS) * (miniSize / 2);
+                ctx.beginPath();
+                ctx.arc(aiMiniX, aiMiniY, Math.min(3, ai.size * 0.5), 0, Math.PI * 2);
+                ctx.fillStyle = 'gray';
+                ctx.fill();
+            });
+
+            const sampleFragments = fragments.slice(0, 20);
+            sampleFragments.forEach(frag => {
+                const fragMiniX = miniX + miniSize / 2 + (frag.x / MAP_RADIUS) * (miniSize / 2);
+                const fragMiniY = miniY + miniSize / 2 + (frag.y / MAP_RADIUS) * (miniSize / 2);
+                ctx.beginPath();
+                ctx.arc(fragMiniX, fragMiniY, 2, 0, Math.PI * 2);
+                ctx.fillStyle = frag.type === 'energy' ? 'blue' : 'green';
+                ctx.fill();
+            });
+
+            ctx.restore();
+
             renderSkillButtons();
 
             if (player.size > 50 || player.health <= 0 || player.energy <= 0) {
