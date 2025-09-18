@@ -11,6 +11,183 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <style>
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .sci-fi-text {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+        .glow-effect {
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        .particle-bg {
+            position: relative;
+            overflow: hidden;
+        }
+        .particle-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('http://static.photos/abstract/1200x630/42') center/cover;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-black bg-opacity-70 py-3 px-6 flex items-center justify-between border-b border-cyan-500">
+        <div class="flex space-x-4">
+            <a href="#" class="text-cyan-300 hover:text-white transition flex items-center">
+                <i data-feather="heart" class="mr-1"></i> Donate
+            </a>
+            <a href="#" class="text-cyan-300 hover:text-white transition flex items-center">
+                <i data-feather="book" class="mr-1"></i> Rules
+            </a>
+            <a href="#" class="text-cyan-300 hover:text-white transition flex items-center">
+                <i data-feather="bell" class="mr-1"></i> News
+            </a>
+        </div>
+        
+        <div class="text-cyan-300 flex items-center">
+            <i data-feather="users" class="mr-2"></i>
+            <span>Online: <span id="online-count" class="font-bold">152</span></span>
+        </div>
+        
+        <div class="relative group">
+            <button class="text-cyan-300 hover:text-white flex items-center">
+                <i data-feather="award" class="mr-1"></i> Ranks
+                <i data-feather="chevron-down" class="ml-1"></i>
+            </button>
+            <div class="absolute right-0 mt-2 w-48 bg-gray-900 rounded-md shadow-lg py-1 z-10 hidden group-hover:block border border-cyan-500">
+                <div class="px-4 py-2 text-sm text-cyan-300 border-b border-cyan-800">Top Players</div>
+                <div class="max-h-60 overflow-y-auto">
+                    <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-cyan-900">1. QuantumPulse</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-cyan-900">2. NebulaStrike</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-cyan-900">3. PhotonBlade</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-cyan-900">4. VoidWalker</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-cyan-900">5. StellarFury</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center justify-center particle-bg py-10 px-4">
+        <div class="text-center mb-8">
+            <h1 class="sci-fi-text text-5xl md:text-7xl font-bold mb-4">FRACTIDE WORLD</h1>
+            <p class="text-xl md:text-2xl text-cyan-300 font-light">A new evolution of particle combat games</p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="w-full max-w-md bg-black bg-opacity-70 rounded-lg p-8 border border-cyan-500 glow-effect mb-12">
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-cyan-300 mb-2">Enter your name</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required 
+                        class="w-full px-4 py-3 bg-gray-800 border border-cyan-500 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white placeholder-gray-500"
+                        placeholder="QuantumPulse..."
+                    >
+                </div>
+                <button 
+                    type="submit" 
+                    class="w-full btn-hover bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-md transition-all duration-300 flex items-center justify-center"
+                >
+                    <i data-feather="play" class="mr-2"></i> PLAY NOW
+                </button>
+            </form>
+        </div>
+
+        <!-- Game Image Display -->
+        <div class="relative w-full max-w-4xl h-64 md:h-96 rounded-lg overflow-hidden border-2 border-cyan-500 glow-effect">
+            <img src="http://static.photos/technology/1200x630/7" alt="Fractide World Gameplay" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-70"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-6 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Experience the Ultimate Particle Combat</h3>
+                <p class="text-cyan-300">Join thousands of players in this revolutionary battle arena</p>
+            </div>
+            <!-- Particle effects overlay -->
+            <div class="absolute inset-0 overflow-hidden">
+                <div class="particle absolute rounded-full bg-cyan-500" style="top: 20%; left: 15%; width: 8px; height: 8px;"></div>
+                <div class="particle absolute rounded-full bg-blue-500" style="top: 40%; left: 70%; width: 6px; height: 6px;"></div>
+                <div class="particle absolute rounded-full bg-purple-500" style="top: 70%; left: 30%; width: 10px; height: 10px;"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        feather.replace();
+        
+        // Simple animation for particles
+        document.querySelectorAll('.particle').forEach(particle => {
+            const duration = Math.random() * 5 + 3;
+            const delay = Math.random() * 2;
+            particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite alternate`;
+        });
+
+        // Online count animation
+        let count = 152;
+        setInterval(() => {
+            const variation = Math.floor(Math.random() * 5) - 2;
+            count = Math.max(100, count + variation);
+            document.getElementById('online-count').textContent = count;
+        }, 3000);
+
+        // Form submission
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            if (username) {
+                window.location.href = `play.html?username=${encodeURIComponent(username)}`;
+            }
+        });
+
+        // Add style tag for particle animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0% { transform: translateY(0) translateX(0); opacity: 1; }
+                50% { transform: translateY(-20px) translateX(10px); opacity: 0.7; }
+                100% { transform: translateY(0) translateX(20px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractide World - Particle Combat Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
