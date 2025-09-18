@@ -1,130 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FractaRush — Fast .io PvP • Play Now</title>
-  <meta name="description" content="FractaRush — short matches, deep growth. Collect fragments, build satellites, and fight to become the core." />
-  <!-- Open Graph -->
-  <meta property="og:title" content="FractaRush — Fast .io PvP" />
-  <meta property="og:description" content="Collect fragments, unlock skills, form satellite swarms and compete in 5-10 minute matches. Play in browser — no install." />
-  <meta property="og:type" content="game" />
-  <meta property="og:image" content="/assets/og-fractarush.png" />
-
-  <link rel="icon" href="/assets/favicon.png" />
+  <meta charset="UTF-8">
+  <title>Fractide Demo</title>
   <style>
-    /* Small, dependency-free CSS for a clean landing */
-    :root{--accent:#6EE7B7;--dark:#0b1220;--muted:#9aa4b2}
-    body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background:linear-gradient(180deg,#071126 0%,#021019 100%);color:#dfe8ee}
-    .wrap{max-width:1100px;margin:40px auto;padding:28px}
-    header{display:flex;align-items:center;justify-content:space-between}
-    .logo{display:flex;align-items:center;gap:12px}
-    .logo .mark{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#42d392,#2bb7ff);display:grid;place-items:center;font-weight:700;color:#042;box-shadow:0 8px 30px rgba(43,183,255,.08)}
-    h1{font-size:36px;margin:0}
-    p.lead{color:var(--muted);margin:8px 0 24px}
-
-    .hero{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:center}
-    .play-card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));padding:18px;border-radius:14px;border:1px solid rgba(255,255,255,0.04)}
-    .cta{display:flex;gap:12px;flex-wrap:wrap}
-    .btn{background:var(--accent);color:#021; padding:12px 18px;border-radius:10px;font-weight:700;border:none;cursor:pointer}
-    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
-    .feature{background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
-
-    .mock{height:320px;border-radius:10px;background:linear-gradient(90deg,#071a2a,#052033);display:flex;align-items:center;justify-content:center;color:#5fb0d6;font-weight:700}
-
-    footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;color:var(--muted);font-size:14px}
-
-    @media(max-width:920px){.hero{grid-template-columns:1fr}.features{grid-template-columns:repeat(2,1fr)}.mock{height:220px}}
-    @media(max-width:520px){.features{grid-template-columns:1fr}}
+    body {
+      margin: 0;
+      background: #111;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: radial-gradient(circle at center, #222, #000);
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="logo">
-        <div class="mark">FR</div>
-        <div>
-          <div style="font-weight:700">FractaRush</div>
-          <div style="font-size:12px;color:var(--muted)">Collect • Evolve • Clash — 5–10 minute matches</div>
-        </div>
-      </div>
-      <nav>
-        <button class="btn secondary" onclick="open('#how')">How to play</button>
-        <button class="btn secondary" onclick="open('#join')">Community</button>
-      </nav>
-    </header>
+<canvas id="gameCanvas"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-    <main class="hero">
-      <section>
-        <h1>Fast matches. Deep choices. Infinite combos.</h1>
-        <p class="lead">Start as a tiny fragment core. Collect energy to grow, unlock skills, build satellite swarms — or go all-in and hunt rivals. Short rounds, big decisions.</p>
+let player = {
+  x: canvas.width/2,
+  y: canvas.height/2,
+  radius: 20,
+  speed: 4,
+  color: "#4af"
+};
 
-        <div class="cta">
-          <button class="btn" id="play-now">Play in browser — Instant</button>
-          <button class="btn secondary" id="watch-demo">Watch demo</button>
-        </div>
+let keys = {};
+let fragments = [];
 
-        <div class="features" style="margin-top:18px">
-          <div class="feature"><strong>Random skill trees</strong><div style="color:var(--muted);font-size:13px">Every match feels different</div></div>
-          <div class="feature"><strong>Short rounds</strong><div style="color:var(--muted);font-size:13px">5–10 minutes — perfect for school breaks</div></div>
-          <div class="feature"><strong>Share your run</strong><div style="color:var(--muted);font-size:13px">Auto-generated result card for socials</div></div>
-        </div>
+function spawnFragments(num=50) {
+  for (let i=0;i<num;i++) {
+    fragments.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      radius: 5,
+      color: "#fa4"
+    });
+  }
+}
+spawnFragments();
 
-        <div style="margin-top:18px;color:var(--muted);font-size:13px">Beta launch: invite-only testing. Want in? <a href="#join" style="color:var(--accent);font-weight:700">Join the Discord →</a></div>
-      </section>
+function drawPlayer() {
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.radius, 0, Math.PI*2);
+  ctx.fillStyle = player.color;
+  ctx.fill();
+}
 
-      <aside class="play-card">
-        <div style="font-weight:700;margin-bottom:8px">Quick demo</div>
-        <div class="mock">(Gameplay mock here — embed canvas)</div>
-        <div style="display:flex;justify-content:space-between;margin-top:12px;align-items:center">
-          <div style="font-size:13px;color:var(--muted)">Players online: <span id="live-count">—</span></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn" id="play-embed">Play</button>
-            <button class="btn secondary" id="spectate">Spectate</button>
-          </div>
-        </div>
-      </aside>
-    </main>
+function drawFragments() {
+  fragments.forEach(f=>{
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.radius, 0, Math.PI*2);
+    ctx.fillStyle = f.color;
+    ctx.fill();
+  });
+}
 
-    <section id="how" style="margin-top:28px">
-      <h2 style="margin-bottom:6px">How it works</h2>
-      <div style="color:var(--muted);display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div>
-          <h4>Collect fragments</h4>
-          <p style="margin:6px 0;color:var(--muted)">Energy increases size. Skill fragments unlock abilities. Structure fragments let you craft shells or satellites.</p>
-        </div>
-        <div>
-          <h4>Choose your evolution</h4>
-          <p style="margin:6px 0;color:var(--muted)">Defender, Striker, or Controller — each match your decisions matter. Mix and match for hybrid builds.</p>
-        </div>
-      </div>
-    </section>
+function movePlayer() {
+  if (keys["w"] || keys["ArrowUp"]) player.y -= player.speed;
+  if (keys["s"] || keys["ArrowDown"]) player.y += player.speed;
+  if (keys["a"] || keys["ArrowLeft"]) player.x -= player.speed;
+  if (keys["d"] || keys["ArrowRight"]) player.x += player.speed;
+}
 
-    <section id="join" style="margin-top:22px">
-      <h3>Join beta & community</h3>
-      <p style="color:var(--muted)">Discord • Twitter • TikTok — we post build notes, events and streamer schedules. Share feedback and get early keys.</p>
-      <div style="display:flex;gap:12px;margin-top:10px">
-        <input placeholder="Your email" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit" />
-        <button class="btn">Request Beta</button>
-      </div>
-    </section>
+function checkCollisions() {
+  for (let i=fragments.length-1;i>=0;i--) {
+    let f = fragments[i];
+    let dx = player.x - f.x;
+    let dy = player.y - f.y;
+    let dist = Math.sqrt(dx*dx+dy*dy);
+    if (dist < player.radius + f.radius) {
+      player.radius += 1; // grow
+      fragments.splice(i,1);
+    }
+  }
+  if (fragments.length < 20) spawnFragments(30);
+}
 
-    <footer>
-      <div>© FractaRush — built by indie devs</div>
-      <div>Privacy • Cookies • Terms</div>
-    </footer>
-  </div>
+function explodePlayer() {
+  for (let i=0;i<10;i++) {
+    fragments.push({
+      x: player.x + (Math.random()*60-30),
+      y: player.y + (Math.random()*60-30),
+      radius: 5+Math.random()*3,
+      color: "#f55"
+    });
+  }
+  player.radius = 20; // reset size
+}
 
-  <script>
-    // Small JS hooks for demo; replace with real logic
-    document.getElementById('play-now').addEventListener('click', ()=>{
-      alert('Demo: Play now would open the game client (placeholder)')
-    })
-    document.getElementById('watch-demo').addEventListener('click', ()=>{
-      alert('Demo video placeholder')
-    })
-  </script>
+window.addEventListener("keydown", e=>{
+  keys[e.key.toLowerCase()] = true;
+  if (e.code==="Space") explodePlayer();
+});
+window.addEventListener("keyup", e=>{ keys[e.key.toLowerCase()] = false; });
+
+function gameLoop() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  movePlayer();
+  drawFragments();
+  drawPlayer();
+  checkCollisions();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+</script>
 </body>
 </html>
