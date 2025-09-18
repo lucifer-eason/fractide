@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fractide.xyz - Optimized Single Player Demo</title>
+    <title>Fractide.xyz - Debugged Single Player Demo</title>
     <style>
         body { margin: 0; background: #111; color: #fff; font-family: Arial, sans-serif; overflow: hidden; }
         canvas { display: block; }
@@ -28,47 +28,37 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Foundation Parameters from Design Document
-        const MAP_RADIUS = 3000; // Half of 6000x6000 for circular map
-        const PLAYER_BASE_RADIUS = 30;
-        const PLAYER_BASE_SPEED = 6;
-        const PLAYER_SPEED_DECAY = 0.1; // Speed reduces 10% per 100 radius growth
-        const PLAYER_MAX_RADIUS = 500;
-        const FRAGMENT_BASE_RADIUS_MIN = 8;
-        const FRAGMENT_BASE_RADIUS_MAX = 15;
-        const FRAGMENT_RESPAWN_RATE = 0.005; // 0.5%/tick
-        const SKILL_FRAGMENT_CHANCE = 0.05;
-        const COLLISION_MARGIN = 0.8; // Eat if radius > target * 1.2 (adjusted to 1.2 as per doc)
-        const ENERGY_MAX = 200;
-        const ENERGY_DRAIN_RATE = 0.001; // Per tick movement
-        const ENERGY_REGEN_RATE = 0.05;
-        const RADIUS_DECAY_RATE = 0.01; // Per second decay (radius * 0.01)
-        const FRAGMENT_RESPAWN_INTERVAL = 1500; // Added to fix the error, 1500ms as per previous usage
+        const MAP_RADIUS = 2000;
+        const BASE_SPEED = 4;
+        const FRAGMENT_COUNT = 120;
+        const FRAGMENT_RESPAWN_INTERVAL = 1500;
+        const MAX_SKILLS = 3;
+        const AI_PLAYER_COUNT = 20;
+        const SKILL_FRAGMENT_PROB = 0.05;
 
         let player = {
             x: 0,
             y: 0,
-            radius: PLAYER_BASE_RADIUS,
+            size: 1,
             health: 100,
-            energy: ENERGY_MAX,
+            energy: 100,
             skills: [],
             skillCooldowns: {},
             armor: 0,
             satellites: [],
             username: 'You' + Math.floor(Math.random() * 1000),
-            particles: [],
-            score: 0
+            particles: []
         };
 
         let aiPlayers = [];
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < AI_PLAYER_COUNT; i++) {
             aiPlayers.push({
                 x: (Math.random() - 0.5) * MAP_RADIUS * 0.8,
                 y: (Math.random() - 0.5) * MAP_RADIUS * 0.8,
-                radius: PLAYER_BASE_RADIUS + Math.random() * 10,
+                size: 1 + Math.random() * 3,
                 username: 'AI' + i,
-                dx: (Math.random() - 0.5) * PLAYER_BASE_SPEED / 2,
-                dy: (Math.random() - 0.5) * PLAYER_BASE_SPEED / 2
+                dx: (Math.random() - 0.5) * 1,
+                dy: (Math.random() - 0.5) * 1
             });
         }
 
@@ -83,61 +73,60 @@
         let hoveredSkill = -1;
 
         const skillDefs = [
-            { id: 'dash', name: 'Dash', color: 'red', cooldown: 6000, duration: 600, effect: () => {
+            { id: 'dash', name: 'Dash', color: 'red', cooldown: 8000, effect: () => {
                 const dx = mouseX - canvas.width / 2;
                 const dy = mouseY - canvas.height / 2;
                 const dist = Math.hypot(dx, dy);
                 if (dist > 0) {
                     player.x += (dx / dist) * 100;
                     player.y += (dy / dist) * 100;
-                    player.radius *= 0.97;
-                    player.health = Math.min(100, player.radius / PLAYER_BASE_RADIUS * 100);
+                    player.size *= 0.97;
+                    player.health = Math.min(100, player.size * 10);
                     createParticles('dash', 10);
                 }
-            }, energyCost: 30 },
-            { id: 'shield', name: 'Shield', color: 'blue', cooldown: 12000, duration: 5000, effect: () => {
+            }},
+            { id: 'shield', name: 'Shield', color: 'blue', cooldown: 15000, effect: () => {
                 if (player.armor < 2) player.armor++;
                 createParticles('shield', 10);
-            }, energyCost: 40 },
-            { id: 'magnet', name: 'Magnet', color: 'purple', cooldown: 10000, duration: 4000, effect: () => {
+            }},
+            { id: 'magnet', name: 'Magnet', color: 'purple', cooldown: 12000, effect: () => {
                 fragments.forEach(frag => {
                     if (frag.type === 'energy') {
                         const dist = Math.hypot(player.x - frag.x, player.y - frag.y);
-                        if (dist < 400) {
+                        if (dist < 200) {
                             frag.x += (player.x - frag.x) * 0.1;
                             frag.y += (player.y - frag.y) * 0.1;
                         }
                     }
                 });
                 createParticles('magnet', 10);
-            }, energyCost: 35 },
-            { id: 'satellite', name: 'Satellite', color: 'yellow', cooldown: 15000, duration: 8000, effect: () => {
-                if (player.satellites.length < 4 && player.radius > PLAYER_BASE_RADIUS * 2) {
-                    player.radius *= 0.9;
-                    player.health = Math.min(100, player.radius / PLAYER_BASE_RADIUS * 100);
+            }},
+            { id: 'split', name: 'Satellite', color: 'yellow', cooldown: 10000, effect: () => {
+                if (player.satellites.length < 3 && player.size > 2) {
+                    player.size *= 0.9;
+                    player.health = Math.min(100, player.size * 10);
                     player.satellites.push({
                         angle: Math.random() * Math.PI * 2,
-                        radius: 80,
-                        size: 15
+                        radius: 30 + player.size * 5,
+                        size: player.size * 0.3
                     });
-                    createParticles('satellite', 10);
+                    createParticles('split', 10);
                 }
-            }, energyCost: 50 },
-            { id: 'nova', name: 'Nova', color: 'green', cooldown: 20000, duration: 0, effect: () => {
-                const dropAmount = Math.floor(player.radius * 0.3 / FRAGMENT_BASE_RADIUS_MIN);
-                player.radius *= 0.7; // Lose 30% radius
-                player.health = Math.min(100, player.radius / PLAYER_BASE_RADIUS * 100);
+            }},
+            { id: 'nova', name: 'Nova', color: 'green', cooldown: 20000, effect: () => {
+                const dropAmount = Math.floor(player.size * (0.05 + Math.random() * 0.05));
+                player.size *= 0.9;
+                player.health = Math.min(100, player.size * 10);
                 for (let i = 0; i < dropAmount; i++) {
                     fragments.push({
-                        x: player.x + (Math.random() - 0.5) * 200,
-                        y: player.y + (Math.random() - 0.5) * 200,
+                        x: player.x + (Math.random() - 0.5) * 50,
+                        y: player.y + (Math.random() - 0.5) * 50,
                         type: 'energy',
-                        value: 0.5,
-                        radius: FRAGMENT_BASE_RADIUS_MIN + Math.random() * (FRAGMENT_BASE_RADIUS_MAX - FRAGMENT_BASE_RADIUS_MIN)
+                        value: 0.5
                     });
                 }
-                createParticles('nova', 20);
-            }, energyCost: 80 }
+                createParticles('nova', 10);
+            }}
         ];
 
         function createParticles(type, count) {
@@ -177,22 +166,21 @@
         function initGame() {
             player.x = 0;
             player.y = 0;
-            player.radius = PLAYER_BASE_RADIUS;
+            player.size = 1;
             player.health = 100;
-            player.energy = ENERGY_MAX;
+            player.energy = 100;
             player.skills = [];
             player.skillCooldowns = {};
             player.armor = 0;
             player.satellites = [];
             player.particles = [];
-            player.score = 0;
             fragments = [];
             aiPlayers.forEach(ai => {
-                ai.x = (Math.random() - 0.5) * MAP_RADIUS * 0.8;
-                ai.y = (Math.random() - 0.5) * MAP_RADIUS * 0.8;
-                ai.radius = PLAYER_BASE_RADIUS + Math.random() * 10;
-                ai.dx = (Math.random() - 0.5) * PLAYER_BASE_SPEED / 2;
-                ai.dy = (Math.random() - 0.5) * PLAYER_BASE_SPEED / 2;
+                ai.x = Math.min(MAP_RADIUS * 0.8, Math.max(-MAP_RADIUS * 0.8, ai.x));
+                ai.y = Math.min(MAP_RADIUS * 0.8, Math.max(-MAP_RADIUS * 0.8, ai.y));
+                ai.size = 1 + Math.random() * 3;
+                ai.dx = (Math.random() - 0.5) * 1;
+                ai.dy = (Math.random() - 0.5) * 1;
             });
             isGameOver = false;
             currentTree = skillDefs.slice().sort(() => Math.random() - 0.5);
@@ -202,74 +190,48 @@
 
         function generateFragments(count) {
             for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * MAP_RADIUS * 0.8 + MAP_RADIUS * 0.1;
+                let angle, dist, x, y;
+                do {
+                    angle = Math.random() * Math.PI * 2;
+                    dist = Math.random() * MAP_RADIUS * 0.8;
+                    x = Math.cos(angle) * dist;
+                    y = Math.sin(angle) * dist;
+                } while (Math.hypot(x, y) > MAP_RADIUS);
                 const typeRoll = Math.random();
                 let type = 'energy';
-                if (typeRoll < SKILL_FRAGMENT_CHANCE) type = 'skill';
+                if (typeRoll > (1 - SKILL_FRAGMENT_PROB)) type = 'skill';
                 fragments.push({
-                    x: Math.cos(angle) * dist,
-                    y: Math.sin(angle) * dist,
+                    x, y,
                     type,
-                    value: 0.5,
-                    radius: FRAGMENT_BASE_RADIUS_MIN + Math.random() * (FRAGMENT_BASE_RADIUS_MAX - FRAGMENT_BASE_RADIUS_MIN)
+                    value: 0.5
                 });
             }
         }
 
         function updateRanking() {
             const allPlayers = [...aiPlayers, player];
-            allPlayers.sort((a, b) => b.radius - a.radius);
+            allPlayers.sort((a, b) => b.size - a.size);
             let html = `<p>Online: ${AI_PLAYER_COUNT + 1} (Last Updated: ${new Date().toLocaleTimeString()})</p><ul>`;
             const top10 = allPlayers.slice(0, 10);
             top10.forEach((p, i) => {
-                html += `<li>#${i+1} ${p.username} - Radius: ${p.radius.toFixed(1)}</li>`;
+                html += `<li>#${i+1} ${p.username} - Size: ${p.size.toFixed(1)}</li>`;
             });
             const playerRank = allPlayers.findIndex(p => p === player) + 1;
-            html += `<li>Your Rank: #${playerRank} - Radius: ${player.radius.toFixed(1)}</li></ul>`;
+            html += `<li>Your Rank: #${playerRank} - Size: ${player.size.toFixed(1)}</li></ul>`;
             ranking.innerHTML = html;
         }
 
         function checkCollisions() {
-            fragments = fragments.filter(frag => {
-                const dist = Math.hypot(player.x - frag.x, player.y - frag.y);
-                if (dist < (player.radius - frag.radius)) {
-                    player.radius += frag.radius * 0.5;
-                    player.energy = Math.min(ENERGY_MAX, player.energy + Math.random() * 10 + 10);
-                    if (frag.type === 'skill' && player.skills.length < MAX_SKILLS) {
-                        const newSkill = currentTree[player.skills.length].id;
-                        if (!player.skills.includes(newSkill)) {
-                            player.skills.push(newSkill);
-                            player.skillCooldowns[newSkill] = 0;
-                        }
-                    }
-                    return false;
-                }
-                return true;
-            });
-
             aiPlayers = aiPlayers.filter(ai => {
                 const dist = Math.hypot(player.x - ai.x, player.y - ai.y);
-                if (dist < (player.radius + ai.radius)) {
-                    if (player.radius > ai.radius * 1.2) {
-                        player.radius += ai.radius * 0.8;
-                        player.energy = Math.min(ENERGY_MAX, player.energy + 50);
-                        player.score += 100;
-                        // Drop 20% as fragments
-                        const dropAmount = Math.floor(ai.radius * 0.2 / FRAGMENT_BASE_RADIUS_MIN);
-                        for (let i = 0; i < dropAmount; i++) {
-                            fragments.push({
-                                x: ai.x + (Math.random() - 0.5) * 50,
-                                y: ai.y + (Math.random() - 0.5) * 50,
-                                type: 'energy',
-                                value: 0.5,
-                                radius: FRAGMENT_BASE_RADIUS_MIN + Math.random() * (FRAGMENT_BASE_RADIUS_MAX - FRAGMENT_BASE_RADIUS_MIN)
-                            });
-                        }
+                if (dist < (player.size + ai.size) * 10) {
+                    if (player.size > ai.size * 1.1) {
+                        player.size += ai.size * 0.5;
+                        player.health = Math.min(100, player.size * 10);
                         return false;
-                    } else if (ai.radius > player.radius * 1.2) {
-                        player.radius *= 0.8;
-                        player.health = Math.min(100, player.radius / PLAYER_BASE_RADIUS * 100);
+                    } else if (ai.size > player.size * 1.1) {
+                        player.size *= 0.8;
+                        player.health = Math.min(100, player.size * 10);
                     }
                 }
                 return true;
@@ -277,9 +239,9 @@
             player.satellites.forEach(sat => {
                 aiPlayers = aiPlayers.filter(ai => {
                     const dist = Math.hypot(sat.x - ai.x, sat.y - ai.y);
-                    if (dist < (sat.size + ai.radius)) {
-                        ai.radius *= 0.9;
-                        if (ai.radius < PLAYER_BASE_RADIUS / 2) return false;
+                    if (dist < (sat.size + ai.size) * 5) {
+                        ai.size *= 0.9;
+                        if (ai.size < 0.5) return false;
                     }
                     return true;
                 });
@@ -305,12 +267,12 @@
             const buttonSize = 60;
             const buttonGap = 10;
             const startX = canvas.width / 2 - (player.skills.length * (buttonSize + buttonGap) / 2);
-            const startY = canvas.height / 2 + player.radius + 20;
+            const startY = canvas.height / 2 + player.size * 10 + 20;
             player.skills.forEach((skillId, index) => {
                 const skill = skillDefs.find(s => s.id === skillId);
                 const btnX = startX + index * (buttonSize + buttonGap);
                 const btnY = startY;
-                const isCooldown = player.skillCooldowns[skillId] > 0 || player.energy < skill.energyCost;
+                const isCooldown = player.skillCooldowns[skillId] > 0 || player.energy < 20;
                 const isHovered = Math.hypot(mouseX - btnX - buttonSize/2, mouseY - btnY - buttonSize/2) < buttonSize/2;
                 if (isHovered) hoveredSkill = index;
 
@@ -337,16 +299,16 @@
             const buttonSize = 60;
             const buttonGap = 10;
             const startX = canvas.width / 2 - (player.skills.length * (buttonSize + buttonGap) / 2);
-            const startY = canvas.height / 2 + player.radius + 20;
+            const startY = canvas.height / 2 + player.size * 10 + 20;
             player.skills.forEach((skillId, index) => {
-                const skill = skillDefs.find(s => s.id === skillId);
                 const btnX = startX + index * (buttonSize + buttonGap);
                 const btnY = startY;
                 if (Math.hypot(clickX - btnX - buttonSize/2, clickY - btnY - buttonSize/2) < buttonSize/2) {
-                    if (player.skillCooldowns[skillId] <= 0 && player.energy >= skill.energyCost) {
+                    const skill = skillDefs.find(s => s.id === skillId);
+                    if (player.skillCooldowns[skillId] <= 0 && player.energy >= 20) {
                         skill.effect();
                         player.skillCooldowns[skillId] = skill.cooldown;
-                        player.energy -= skill.energyCost;
+                        player.energy -= 20;
                     }
                 }
             });
@@ -380,32 +342,47 @@
             const dy = mouseY - canvas.height / 2;
             const dist = Math.hypot(dx, dy);
             if (dist > 0) {
-                const speed = PLAYER_BASE_SPEED * (1 - PLAYER_SPEED_DECAY * (player.radius - PLAYER_BASE_RADIUS) / 100);
-                const newX = player.x + (dx / dist) * Math.max(1, speed); // Ensure minimum speed
-                const newY = player.y + (dy / dist) * Math.max(1, speed);
-                const newDist = Math.hypot(newX, newY);
-                if (newDist < MAP_RADIUS) {
-                    player.x = newX;
-                    player.y = newY;
-                    player.energy -= player.radius * ENERGY_DRAIN_RATE;
+                const speed = BASE_SPEED / Math.sqrt(player.size);
+                let newX = player.x + (dx / dist) * speed;
+                let newY = player.y + (dy / dist) * speed;
+                const playerDist = Math.hypot(newX, newY);
+                if (playerDist > MAP_RADIUS) {
+                    const angle = Math.atan2(newY, newX);
+                    newX = Math.cos(angle) * MAP_RADIUS;
+                    newY = Math.sin(angle) * MAP_RADIUS;
                 }
+                player.x = newX;
+                player.y = newY;
+                player.energy -= player.size * 0.001;
             }
 
             aiPlayers.forEach(ai => {
                 ai.x += ai.dx;
                 ai.y += ai.dy;
                 const aiDist = Math.hypot(ai.x, ai.y);
-                if (aiDist > MAP_RADIUS || Math.random() < 0.003) {
-                    ai.dx = (Math.random() - 0.5) * PLAYER_BASE_SPEED / 2;
-                    ai.dy = (Math.random() - 0.5) * PLAYER_BASE_SPEED / 2;
+                if (aiDist > MAP_RADIUS) {
+                    const angle = Math.atan2(ai.y, ai.x);
+                    ai.x = Math.cos(angle) * MAP_RADIUS;
+                    ai.y = Math.sin(angle) * MAP_RADIUS;
+                    ai.dx = -ai.dx * 0.5;
+                    ai.dy = -ai.dy * 0.5;
+                } else if (Math.random() < 0.003) {
+                    ai.dx = (Math.random() - 0.5) * 1;
+                    ai.dy = (Math.random() - 0.5) * 1;
                 }
-                if (Math.random() < FRAGMENT_RESPAWN_RATE && ai.radius < PLAYER_MAX_RADIUS) ai.radius += 0.05;
+                if (Math.random() < 0.01 && ai.size < 10) ai.size += 0.05;
             });
 
             player.satellites.forEach(sat => {
                 sat.angle += 0.05;
                 sat.x = player.x + Math.cos(sat.angle) * sat.radius;
                 sat.y = player.y + Math.sin(sat.angle) * sat.radius;
+                const satDist = Math.hypot(sat.x, sat.y);
+                if (satDist > MAP_RADIUS) {
+                    const angle = Math.atan2(sat.y, sat.x);
+                    sat.x = Math.cos(angle) * MAP_RADIUS;
+                    sat.y = Math.sin(angle) * MAP_RADIUS;
+                }
             });
 
             Object.keys(player.skillCooldowns).forEach(skill => {
@@ -413,20 +390,23 @@
             });
             updateParticles();
 
-            player.energy = Math.min(ENERGY_MAX, player.energy + ENERGY_REGEN_RATE);
+            player.energy = Math.min(100, player.energy + 0.05);
 
             fragments = fragments.filter(frag => {
                 const fragDist = Math.hypot(player.x - frag.x, player.y - frag.y);
-                if (fragDist < (player.radius - frag.radius)) {
-                    player.radius += frag.radius * 0.5;
-                    player.energy = Math.min(ENERGY_MAX, player.energy + Math.random() * 10 + 10);
-                    if (frag.type === 'skill' && player.skills.length < MAX_SKILLS) {
+                if (fragDist < player.size * 10) {
+                    if (frag.type === 'energy') {
+                        player.energy = Math.min(100, player.energy + 5);
+                        player.size += frag.value / (1 + player.size / 30) * 0.15;
+                        player.health = Math.min(100, player.size * 10);
+                    } else if (frag.type === 'skill' && player.skills.length < MAX_SKILLS) {
                         const newSkill = currentTree[player.skills.length].id;
                         if (!player.skills.includes(newSkill)) {
                             player.skills.push(newSkill);
                             player.skillCooldowns[newSkill] = 0;
                         }
                     }
+                    updateRanking();
                     return false;
                 }
                 return true;
@@ -434,17 +414,11 @@
 
             checkCollisions();
 
-            // Radius decay
-            player.radius = Math.max(PLAYER_BASE_RADIUS, player.radius - player.radius * RADIUS_DECAY_RATE / 60); // Per frame approximation
-
-            // Vision adaptation like DigDig: zoom out as radius increases, but keep centered and avoid full red
-            cameraZoom = 1 / (1 + (player.radius - PLAYER_BASE_RADIUS) / 200); // Slower zoom out, mimicking DigDig
-            const zoomedWidth = Math.min(canvas.width, MAP_RADIUS * 2) / cameraZoom;
-            const zoomedHeight = Math.min(canvas.height, MAP_RADIUS * 2) / cameraZoom;
-            cameraX = player.x - zoomedWidth / 2;
-            cameraY = player.y - zoomedHeight / 2;
-            cameraX = Math.max(-MAP_RADIUS + canvas.width / 2 / cameraZoom, Math.min(cameraX, MAP_RADIUS - canvas.width / 2 / cameraZoom));
-            cameraY = Math.max(-MAP_RADIUS + canvas.height / 2 / cameraZoom, Math.min(cameraY, MAP_RADIUS - canvas.height / 2 / cameraZoom));
+            cameraZoom = 1 / (1 + Math.sqrt(player.size) / 10);
+            const zoomedWidth = Math.min(canvas.width, MAP_RADIUS * 2) * cameraZoom;
+            const zoomedHeight = Math.min(canvas.height, MAP_RADIUS * 2) * cameraZoom;
+            cameraX = Math.max(-MAP_RADIUS + canvas.width / 2 / cameraZoom, Math.min(player.x, MAP_RADIUS - canvas.width / 2 / cameraZoom));
+            cameraY = Math.max(-MAP_RADIUS + canvas.height / 2 / cameraZoom, Math.min(player.y, MAP_RADIUS - canvas.height / 2 / cameraZoom));
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -464,85 +438,95 @@
             ctx.restore();
 
             ctx.save();
-            ctx.translate(canvas.width / 2 - player.x * cameraZoom, canvas.height / 2 - player.y * cameraZoom);
-            ctx.scale(cameraZoom, cameraZoom);
+            ctx.translate(-cameraX + canvas.width / 2, -cameraY + canvas.height / 2);
+            ctx.scale(1 / cameraZoom, 1 / cameraZoom);
 
             ctx.beginPath();
             ctx.arc(0, 0, MAP_RADIUS, 0, Math.PI * 2);
             ctx.strokeStyle = 'white';
-            ctx.lineWidth = 10 / cameraZoom;
+            ctx.lineWidth = 10;
             ctx.stroke();
 
             fragments.forEach(frag => {
-                ctx.beginPath();
-                if (frag.type === 'skill') {
-                    const size = frag.radius;
-                    ctx.moveTo(frag.x + size * Math.cos(0), frag.y + size * Math.sin(0));
-                    for (let i = 1; i <= 6; i++) {
-                        ctx.lineTo(frag.x + size * Math.cos(i * Math.PI / 3), frag.y + size * Math.sin(i * Math.PI / 3));
+                const fragDist = Math.hypot(frag.x, frag.y);
+                if (fragDist <= MAP_RADIUS) {
+                    ctx.beginPath();
+                    const screenX = frag.x;
+                    const screenY = frag.y;
+                    if (frag.type === 'skill') {
+                        const size = 15;
+                        ctx.moveTo(screenX + size * Math.cos(0), screenY + size * Math.sin(0));
+                        for (let i = 1; i <= 6; i++) {
+                            ctx.lineTo(screenX + size * Math.cos(i * Math.PI / 3), screenY + size * Math.sin(i * Math.PI / 3));
+                        }
+                        ctx.fillStyle = skillDefs.find(s => s.id === currentTree[player.skills.length]?.id)?.color || 'green';
+                    } else {
+                        ctx.arc(screenX, screenY, 5, 0, Math.PI * 2);
+                        ctx.fillStyle = 'blue';
                     }
-                    ctx.fillStyle = skillDefs.find(s => s.id === currentTree[player.skills.length]?.id)?.color || 'green';
-                } else {
-                    ctx.arc(frag.x, frag.y, frag.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = 'blue';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
                 }
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.lineWidth = 2 / cameraZoom;
-                ctx.stroke();
             });
 
             aiPlayers.forEach(ai => {
-                ctx.shadowColor = 'gray';
-                ctx.shadowBlur = 10 / cameraZoom;
-                ctx.beginPath();
-                ctx.arc(ai.x, ai.y, ai.radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'gray';
-                ctx.fill();
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = 'white';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(ai.username, ai.x, ai.y - ai.radius - 10);
-                ctx.fillStyle = 'green';
-                drawRoundedRect(ai.x - 50, ai.y - ai.radius - 5, Math.min(100, ai.radius / PLAYER_BASE_RADIUS * 100), 5, 2 / cameraZoom);
-                ctx.strokeStyle = 'white';
-                ctx.strokeRect(ai.x - 50, ai.y - ai.radius - 5, 100, 5);
+                const aiDist = Math.hypot(ai.x, ai.y);
+                if (aiDist <= MAP_RADIUS) {
+                    ctx.shadowColor = 'gray';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(ai.x, ai.y, ai.size * 10, 0, Math.PI * 2);
+                    ctx.fillStyle = 'gray';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ai.username, ai.x, ai.y - ai.size * 15 - 10);
+                    drawRoundedRect(ai.x - 50, ai.y - ai.size * 15, Math.min(100, ai.size * 10), 5, 2);
+                    ctx.strokeStyle = 'white';
+                    ctx.strokeRect(ai.x - 50, ai.y - ai.size * 15, 100, 5);
+                }
             });
 
             player.satellites.forEach(sat => {
-                ctx.beginPath();
-                ctx.arc(sat.x, sat.y, sat.size, 0, Math.PI * 2);
-                ctx.fillStyle = 'yellow';
-                ctx.fill();
+                const satDist = Math.hypot(sat.x, sat.y);
+                if (satDist <= MAP_RADIUS) {
+                    ctx.beginPath();
+                    ctx.arc(sat.x, sat.y, sat.size * 5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'yellow';
+                    ctx.fill();
+                }
             });
 
             ctx.shadowColor = 'red';
-            ctx.shadowBlur = 10 / cameraZoom;
+            ctx.shadowBlur = 10;
             ctx.beginPath();
-            ctx.arc(0, 0, player.radius, 0, Math.PI * 2); // Center player at origin after translation
+            ctx.arc(player.x, player.y, player.size * 10, 0, Math.PI * 2);
             ctx.fillStyle = 'red';
             ctx.fill();
             ctx.shadowBlur = 0;
             if (player.armor > 0) {
                 ctx.strokeStyle = 'blue';
-                ctx.lineWidth = 3 / cameraZoom;
+                ctx.lineWidth = 3;
                 ctx.stroke();
             }
 
-            const barX = -50;
-            const barY = -player.radius - 10;
+            const barX = player.x - 50;
+            const barY = player.y - player.size * 15 - 10;
             ctx.fillStyle = 'green';
-            drawRoundedRect(barX, barY, player.health, 5, 2 / cameraZoom);
+            drawRoundedRect(barX, barY, player.health, 5, 2);
             ctx.strokeStyle = 'white';
             ctx.strokeRect(barX, barY, 100, 5);
             ctx.fillStyle = 'blue';
-            drawRoundedRect(barX, barY - 3, player.energy * 0.5, 3, 1 / cameraZoom);
+            drawRoundedRect(barX, barY - 3, player.energy * 0.8, 3, 1);
 
             ctx.fillStyle = 'white';
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(player.username, 0, barY - 5);
+            ctx.fillText(player.username, player.x, barY - 5);
 
             renderParticles();
 
@@ -585,7 +569,7 @@
                 const aiMiniX = miniX + miniSize / 2 + (ai.x / MAP_RADIUS) * (miniSize / 2);
                 const aiMiniY = miniY + miniSize / 2 + (ai.y / MAP_RADIUS) * (miniSize / 2);
                 ctx.beginPath();
-                ctx.arc(aiMiniX, aiMiniY, Math.min(3, ai.radius / 10), 0, Math.PI * 2);
+                ctx.arc(aiMiniX, aiMiniY, Math.min(3, ai.size * 0.5), 0, Math.PI * 2);
                 ctx.fillStyle = 'gray';
                 ctx.fill();
             });
@@ -604,12 +588,7 @@
 
             renderSkillButtons();
 
-            if (player.radius > PLAYER_MAX_RADIUS) {
-                // Force Nova
-                skillDefs.find(s => s.id === 'nova').effect();
-            }
-
-            if (player.radius < PLAYER_BASE_RADIUS || player.health <= 0 || player.energy <= 0) {
+            if (player.size > 50 || player.health <= 0 || player.energy <= 0) {
                 isGameOver = true;
                 alert('Game Over! Restart to play again.');
             }
@@ -618,7 +597,7 @@
         }
 
         setInterval(() => {
-            if (!isGameOver) generateFragments(Math.floor(120 * FRAGMENT_RESPAWN_RATE)); // Using a base count of 120 as per FRAGMENT_COUNT
+            if (!isGameOver) generateFragments(10);
         }, FRAGMENT_RESPAWN_INTERVAL);
 
         setInterval(updateRanking, 5000);
