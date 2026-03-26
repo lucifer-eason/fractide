@@ -5,12 +5,12 @@
     <title>Async fractides</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>班会课</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
         }
 
         /* 全屏容器 */
@@ -19,6 +19,7 @@
             height: 100vh;
             overflow: hidden;
             position: relative;
+            background: #ffffff;
         }
 
         /* 首页样式 */
@@ -28,116 +29,233 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4eaf5 100%);
             cursor: pointer;
-            /* 默认隐藏内容页 */
-            display: flex;
+            transition: all 0.3s;
         }
 
         /* 首页图片 */
         #home img {
-            max-width: 90%;
-            max-height: 90%;
+            max-width: 92%;
+            max-height: 92%;
             object-fit: contain;
-            border-radius: 8px;
-            transition: transform 0.3s;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.35s ease;
         }
 
         #home img:hover {
-            transform: scale(1.02);
+            transform: scale(1.03);
         }
 
-        /* 滑动页面容器 */
+        /* 页面容器 */
         .slide-container {
             width: 100vw;
             height: 100vh;
-            overflow-y: scroll;
-            scroll-snap-type: y mandatory; /* 强制上下滑动吸附 */
-            display: none; /* 默认隐藏 */
+            display: none;
+            position: relative;
         }
 
-        /* 每一页滑动单元 */
+        /* 每一页 */
         .slide {
             width: 100vw;
             height: 100vh;
-            scroll-snap-align: start;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            background: white;
-            border-bottom: 1px solid #eee;
+            background: #ffffff;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 30px;
+        }
+
+        /* 默认显示第一页 */
+        .slide.active {
+            display: flex;
         }
 
         /* 页面文字样式 */
         .slide-content {
             text-align: center;
-            padding: 20px;
+            max-width: 90%;
+        }
+
+        .slide-content h1 {
+            font-size: 42px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .slide-content p {
+            font-size: 22px;
+            color: #555;
+            margin-top: 15px;
+        }
+
+        /* iframe 全屏样式 */
+        .iframe-page {
+            width: 100% !important;
+            height: 100% !important;
+            padding: 0 !important;
+        }
+        .iframe-page iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* ———————— 右侧 页码 + 按钮 UI ———————— */
+        .right-control {
+            position: fixed;
+            right: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            z-index: 999;
+        }
+
+        /* 页码指示器 */
+        .page-indicator {
+            width: 60px;
+            height: 60px;
+            background: #409eff;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(64, 158, 255, 0.3);
+        }
+
+        /* 翻页按钮 */
+        .page-btn {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            color: #409eff;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover {
+            background: #409eff;
+            color: white;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #f0f0f0;
+            color: #999;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <!-- 首页：只放一张图片 -->
+        <!-- 首页 -->
         <div id="home">
             <img src="屏幕截图 2026-03-26 125736.png" alt="班会课首页">
         </div>
 
-        <!-- 滑动内容页 -->
+        <!-- 课件内容 -->
         <div class="slide-container" id="slides">
-            <div class="slide">
+            <!-- 第1页 -->
+            <div class="slide active">
                 <div class="slide-content">
                     <header>
-                    <h1>《班会》</h1>
-                    <hr />
-                    <img src="/屏幕截图 2026-03-26 125807.png" alt="ybj">
-                    <img src="/屏幕截图 2026-03-26 125813.png" alt="ybj">
-                    <img src="/屏幕截图 2026-03-26 125821.png" alt="ybj">
-                    <img src="/屏幕截图 2026-03-26 125824.png" alt="ybj">
-                    <img src="/屏幕截图 2026-03-26 125829.png" alt="ybj">
-                    <img src="/屏幕截图 2026-03-26 125835.png" alt="ybj">
-                    <img src="/屏幕截图 2026-03-26 125841.png" alt="ybj">
+                        <h1>《班会》</h1>
+                        <hr style="margin:15px 0; border-color:#eee;">
+                        <img src="/屏幕截图 2026-03-26 125807.png" alt="ybj" style="height:100px; margin:5px;">
+                        <img src="/屏幕截图 2026-03-26 125813.png" alt="ybj" style="height:100px; margin:5px;">
+                        <img src="/屏幕截图 2026-03-26 125821.png" alt="ybj" style="height:100px; margin:5px;">
+                        <img src="/屏幕截图 2026-03-26 125824.png" alt="ybj" style="height:100px; margin:5px;">
+                        <img src="/屏幕截图 2026-03-26 125829.png" alt="ybj" style="height:100px; margin:5px;">
+                        <img src="/屏幕截图 2026-03-26 125835.png" alt="ybj" style="height:100px; margin:5px;">
+                        <img src="/屏幕截图 2026-03-26 125841.png" alt="ybj" style="height:100px; margin:5px;">
                     </header>
-                    <p><b>-文娱YBJ精心制作-</b></p>
+                    <p style="margin-top:30px;"><b>- 文娱委员精心制作 -</b></p>
                 </div>
             </div>
+
+            <!-- 第2页 -->
             <div class="slide">
                 <div class="slide-content">
                     <h1>???</h1>
-                    <img src="/2plan.jpg" alt="plan">
+                    <img src="/2plan.jpg" alt="plan" style="max-height:70vh; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
                 </div>
             </div>
-            <div class="slide">
-                <div class="slide-content">
-                    <h1>第三课间</h1>
-                    <p>你好</p>
-                </div>
+
+            <!-- ===================== 第三页：iframe B站 全屏嵌入 ===================== -->
+            <div class="slide iframe-page">
+                <h1>"在b站搜"浪卷云腾""</h1>
+                <iframe src="https://search.bilibili.com/all?keyword=%E6%B5%AA%E5%8D%B7%E4%BA%91%E8%85%BE&from_source=webtop_search&spm_id_from=333.1007&search_source=5"></iframe>
             </div>
+
+            <!-- 第4页 -->
             <div class="slide">
                 <div class="slide-content">
                     <h1>结束页</h1>
                     <p>你好</p>
                 </div>
             </div>
+
+            <!-- ———————— 右侧 页码 + 按钮 ———————— -->
+            <div class="right-control">
+                <button class="page-btn" id="prev">↑</button>
+                <div class="page-indicator" id="pageNum">1/4</div>
+                <button class="page-btn" id="next">↓</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // 获取元素
         const homePage = document.getElementById('home');
         const slidePage = document.getElementById('slides');
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const pageNum = document.getElementById('pageNum');
+        
+        let current = 0;
+        const total = slides.length;
 
-        // 点击首页图片 → 跳转到滑动页
+        // 点击首页进入课件
         homePage.addEventListener('click', () => {
-            homePage.style.display = 'none';   // 隐藏首页
-            slidePage.style.display = 'block'; // 显示滑动页
-            slidePage.focus(); // 聚焦方便滑动
+            homePage.style.display = 'none';
+            slidePage.style.display = 'block';
+            updatePage();
         });
 
-        // 适配手机/电脑滑动，无卡顿
-        slidePage.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            slidePage.scrollTop += e.deltaY;
+        // 更新页面与按钮状态
+        function updatePage() {
+            slides.forEach((s, i) => s.classList.toggle('active', i === current));
+            pageNum.innerText = `${current + 1}/${total}`;
+            prevBtn.disabled = current === 0;
+            nextBtn.disabled = current === total - 1;
+        }
+
+        // 上一页
+        prevBtn.addEventListener('click', () => {
+            current--;
+            updatePage();
+        });
+
+        // 下一页
+        nextBtn.addEventListener('click', () => {
+            current++;
+            updatePage();
         });
     </script>
 </body>
