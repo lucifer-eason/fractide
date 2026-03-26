@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" href="headpic.png" />
+    <title>Async fractides</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班会课</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 全屏容器 */
+        .container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 首页样式 */
+        #home {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            cursor: pointer;
+            /* 默认隐藏内容页 */
+            display: flex;
+        }
+
+        /* 首页图片 */
+        #home img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            transition: transform 0.3s;
+        }
+
+        #home img:hover {
+            transform: scale(1.02);
+        }
+
+        /* 滑动页面容器 */
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory; /* 强制上下滑动吸附 */
+            display: none; /* 默认隐藏 */
+        }
+
+        /* 每一页滑动单元 */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            scroll-snap-align: start;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* 页面文字样式 */
+        .slide-content {
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 首页：只放一张图片 -->
+        <div id="home">
+            <!-- 替换成你的图片地址（本地图片/网络图片都可以） -->
+            <img src="屏幕截图 2026-03-26 125736.png" height="font-size" width="font-size" alt="班会课首页">
+        </div>
+
+        <!-- 滑动内容页 -->
+        <div class="slide-container" id="slides">
+            <div class="slide">
+                <div class="slide-content">
+                    <header>
+                    <h1>《班会》</h1>
+                    <hr />
+                    <img src="/屏幕截图 2026-03-26 125807.png" alt="ybj">
+                    <img src="/屏幕截图 2026-03-26 125813.png" alt="ybj">
+                    <img src="/屏幕截图 2026-03-26 125821.png" alt="ybj">
+                    <img src="/屏幕截图 2026-03-26 125824.png" alt="ybj">
+                    <img src="/屏幕截图 2026-03-26 125829.png" alt="ybj">
+                    <img src="/屏幕截图 2026-03-26 125835.png" alt="ybj">
+                    <img src="/屏幕截图 2026-03-26 125841.png" alt="ybj">
+                    </header>
+                    <p>-文娱YBJ精心制作</p>
+                </div>
+            </div>
+            <div class="slide">
+                <div class="slide-content">
+                    <h1>第二课间</h1>
+                    <p>你好</p>
+                </div>
+            </div>
+            <div class="slide">
+                <div class="slide-content">
+                    <h1>第三课间</h1>
+                    <p>你好</p>
+                </div>
+            </div>
+            <div class="slide">
+                <div class="slide-content">
+                    <h1>结束页</h1>
+                    <p>你好</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取元素
+        const homePage = document.getElementById('home');
+        const slidePage = document.getElementById('slides');
+
+        // 点击首页图片 → 跳转到滑动页
+        homePage.addEventListener('click', () => {
+            homePage.style.display = 'none';   // 隐藏首页
+            slidePage.style.display = 'block'; // 显示滑动页
+            slidePage.focus(); // 聚焦方便滑动
+        });
+
+        // 适配手机/电脑滑动，无卡顿
+        slidePage.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            slidePage.scrollTop += e.deltaY;
+        });
+    </script>
+</body>
+</html>
