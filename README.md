@@ -1,2 +1,2 @@
 # list the fracties of async 
-fractide.xyz
+[fractides](https://fractide.xyz/)
