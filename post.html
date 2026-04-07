@@ -48,20 +48,19 @@ function convertWikiLinks(md) {
   return md.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
     const name = p1.trim();
     const file = encodeURIComponent(name + ".md");
-    return `<a href="/post.html?file=english/${file}">${name}</a>`;
+    return `<a href="post.html?file=english/${file}">${name}</a>`;
   });
 }
 
 function convertImages(md) {
   return md.replace(/!\[\[(.*?)\]\]/g, (match, p1) => {
-    return `![](/posts/english/${p1})`;
+    return `![](posts/english/${p1})`;
   });
 }
 
-fetch(`posts/${file}`)
+fetch(`./posts/${file}`)
   .then(res => res.text())
   .then(md => {
-    md = convertWikiLinks(md);
     md = convertImages(md);
     md = convertWikiLinks(md);
     document.getElementById('content').innerHTML = marked.parse(md);
