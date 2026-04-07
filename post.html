@@ -44,9 +44,16 @@ a {
 const params = new URLSearchParams(location.search);
 const file = params.get('file');
 
+function convertWikiLinks(md) {
+  return md.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
+    return `[${p1}](post.html?file=english/${p1}.md)`;
+  });
+}
+
 fetch(`posts/${file}`)
   .then(res => res.text())
   .then(md => {
+    md = convertWikiLinks(md);
     document.getElementById('content').innerHTML = marked.parse(md);
   });
 </script>
