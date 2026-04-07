@@ -33,8 +33,14 @@ function searchPosts() {
 }
 
 function filterPosts(category) {
-  if (category === 'all') return renderPosts(allPosts);
-  renderPosts(allPosts.filter(p => p.category === category));
+  if (category === 'all') {
+    renderPosts(allPosts);
+  } else {
+    const filtered = allPosts.filter(p => 
+      p.category && p.category.toLowerCase().trim() === category
+    );
+    renderPosts(filtered);
+  }
 }
 
 loadPosts();
