@@ -44,11 +44,23 @@ a {
 const params = new URLSearchParams(location.search);
 const file = params.get('file');
 
+fetch(`./posts/${file}`)
+  .then(res => res.text())
+  .then(md => {
+
+    // 👇 先处理 Obsidian 语法（关键）
+    md = convertImages(md);
+    md = convertWikiLinks(md);
+
+    const html = marked.parse(md);
+    document.getElementById('content').innerHTML = html;
+  });
+
 function convertWikiLinks(md) {
   return md.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
     const name = p1.trim();
     const file = encodeURIComponent(name + ".md");
-    return `<a href="post.html?file=english/${file}">${name}</a>`;
+    return `[${name}](post.html?file=english/${file})`;
   });
 }
 
@@ -57,14 +69,6 @@ function convertImages(md) {
     return `![](posts/english/${p1})`;
   });
 }
-
-fetch(`./posts/${file}`)
-  .then(res => res.text())
-  .then(md => {
-    md = convertImages(md);
-    md = convertWikiLinks(md);
-    document.getElementById('content').innerHTML = marked.parse(md);
-  });
 </script>
 
 </body>
