@@ -48,9 +48,9 @@ fetch(`./posts/${file}`)
   .then(res => res.text())
   .then(md => {
 
-    // 👇 先处理 Obsidian 语法（关键）
     md = convertImages(md);
     md = convertWikiLinks(md);
+    md = fixMarkdownLinks(md);
 
     const html = marked.parse(md);
     document.getElementById('content').innerHTML = html;
@@ -61,6 +61,18 @@ function convertWikiLinks(md) {
     const name = p1.trim();
     const file = encodeURIComponent(name + ".md");
     return `[${name}](post.html?file=english/${file})`;
+  });
+}
+
+function fixMarkdownLinks(md) {
+  return md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, link) => {
+    // 如果已经是 http 或 post.html 就不处理
+    if (link.startsWith("http") || link.includes("post.html")) {
+      return match;
+    }
+
+    const file = encodeURIComponent(link + ".md");
+    return `[${text}](post.html?file=english/${file})`;
   });
 }
 
