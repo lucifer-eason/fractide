@@ -41,8 +41,8 @@ ACT 核心：想法 ≠ 我，情绪 ≠ 任务。
 属于“受控轻度解离”，安全且常用于提高表现
 
 {
-  "title": "xxx",
-  "desc": "xxx",
-  "file": "xxx.md",
-  "category": "life"
+    "title": "认知解离",
+    "desc": "A Crazy Idea",
+    "file": "cognitive.md",
+    "category": "life"
 }
