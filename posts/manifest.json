@@ -10,5 +10,11 @@
     "desc": "THE language system conclusion FROM LXY",
     "file": "talentlanguage.md",
     "category": "life"
+  },
+  {
+    "title": "算法时代的舆论失真：结构性误导、情绪驱动与认知失衡的机制研究",
+    "desc": "Distortion of public opinion",
+    "file": "distortion.md",
+    "category": "tech"
   }
 ]
