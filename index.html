@@ -9,187 +9,29 @@
     <meta name="author" content="async">
     <meta name="description" content="async fractides">
     <meta name="keywords" content="async,fractide">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Async Fractides</title>
-  <style>
-    :root {
-      --bg: #0f1117;
-      --sidebar: #151822;
-      --card: #1e2230;
-      --text: #e6e9ef;
-      --subtext: #9aa4b2;
-      --accent: #7aa2f7;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-    }
-
-    body {
-      display: flex;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-    }
-
-    .sidebar {
-      width: 260px;
-      background: var(--sidebar);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid #222;
-    }
-
-    .logo {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: var(--accent);
-    }
-
-    .nav-item {
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      color: var(--subtext);
-      transition: 0.2s;
-    }
-
-    .nav-item:hover {
-      background: #202533;
-      color: var(--text);
-    }
-
-    .main {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto;
-    }
-
-    .search {
-      margin-bottom: 20px;
-    }
-
-    .search input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      background: #1a1f2b;
-      color: white;
-    }
-
-    .card {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 16px;
-      margin-bottom: 20px;
-      transition: 0.2s;
-      cursor: pointer;
-    }
-
-    .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-
-    .title {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-
-    .desc {
-      color: var(--subtext);
-      font-size: 14px;
-    }
-
-    .content {
-      display: none;
-      margin-top: 20px;
-      line-height: 1.6;
-    }
-
-    .active .content {
-      display: block;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Async Fractides</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <div class="sidebar">
-    <div class="logo">Async Fractides</div>
-    <div class="nav-item" onclick="filterPosts('all')">All</div>
-    <div class="nav-item" onclick="filterPosts('tech')">Tech</div>
-    <div class="nav-item" onclick="filterPosts('life')">Life</div>
+<div class="sidebar">
+  <div class="logo">Async Fractides</div>
+  <div class="nav-item" onclick="filterPosts('all')">All</div>
+  <div class="nav-item" onclick="filterPosts('tech')">Tech</div>
+  <div class="nav-item" onclick="filterPosts('life')">Life</div>
+</div>
+
+<div class="main">
+  <div class="search">
+    <input type="text" id="search" placeholder="Search..." oninput="searchPosts()">
   </div>
 
-  <div class="main">
-    <div class="search">
-      <input type="text" id="search" placeholder="Search..." oninput="searchPosts()">
-    </div>
+  <div id="posts"></div>
+</div>
 
-    <div id="posts"></div>
-  </div>
-
-<script>
-const posts = [
-  {
-    title: "早",
-    desc: "morning",
-    content: "night",
-    category: "tech"
-  },
-  {
-    title: "一些碎片化思考",
-    desc: "关于生活与成长",
-    content: "成长不是线性的，而是 fractides。",
-    category: "life"
-  }
-];
-
-function renderPosts(list) {
-  const container = document.getElementById('posts');
-  container.innerHTML = '';
-
-  list.forEach((post, index) => {
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `
-      <div class="title">${post.title}</div>
-      <div class="desc">${post.desc}</div>
-      <div class="content">${post.content}</div>
-    `;
-
-    div.onclick = () => {
-      div.classList.toggle('active');
-    };
-
-    container.appendChild(div);
-  });
-}
-
-function searchPosts() {
-  const value = document.getElementById('search').value.toLowerCase();
-  const filtered = posts.filter(p => p.title.toLowerCase().includes(value));
-  renderPosts(filtered);
-}
-
-function filterPosts(category) {
-  if (category === 'all') {
-    renderPosts(posts);
-  } else {
-    const filtered = posts.filter(p => p.category === category);
-    renderPosts(filtered);
-  }
-}
-
-renderPosts(posts);
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
